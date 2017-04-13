@@ -2,6 +2,8 @@
 
 import argparse, boto3, json
 
+import lambda
+
 parser = argparse.ArgumentParser()
 parser.add_argument('string', type=str)
 
