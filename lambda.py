@@ -1,4 +1,5 @@
 import os, json, boto3, urllib, urllib2
+import email
 
 s3 = boto3.client('s3')
 
@@ -11,39 +12,56 @@ def getEmail(event):
     #print("CONTENT TYPE: " + response['ContentType'])
     #print("Received event: ")
     #print(response.viewkeys())
-    print "Body:"
+    #print "Body:"
     emailText = response['Body'].read()
-    print emailText
+    #print emailText
     return emailText
   except Exception as e:
     print(e)
     print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
     raise e
 
-def parseEmail():
-  pass
+def parseEmail(rawEmail):
+  parsingEmail = email.message_from_string(rawEmail)
+  parsedEmail = {}
+  parsedEmail['Subject'] = parsingEmail['Subject']
+  walkedEmail = parsingEmail.walk()
+  for part in walkedEmail:
+    if part.get_content_type() == 'text/plain':
+      parsedEmail['Text'] = part.get_payload()
+  needToLoop = True
+  while needToLoop == True:
+    print "run once"
+    needToLoop = False
+  return parsedEmail
   
-def postToSpark():
+def postToSpark(dictToPost):
   apiKey = os.environ.get('SparkApiKey')
   url = "https://api.ciscospark.com/v1/messages"
-  data = "{\r\n  \"roomId\" : \"Y2lzY29zcGFyazovL3VzL1JPT00vYjM0MzBmYzAtYzI4ZS0xMWU2LTkwZTYtZWJmZjkzMDZkYjdi\",\r\n  \"text\" : \"This is a plain text message\"\r\n}"
+  data = '''{
+    "roomId" : "Y2lzY29zcGFyazovL3VzL1JPT00vNGVlMDYxYzAtMTMwZC0xMWU3LTk3NzYtODkyNDJkMDcxNjcx",
+    "text" : "%s"
+    }''' % dictToPost['Subject']
   headers = {
     'authorization': "Bearer %s" % apiKey,
     'content-type': "application/json",
     'cache-control': "no-cache",
   }
-  print headers
+  #print headers
   req = urllib2.Request(url,data,headers)
   content = urllib2.urlopen(req).read()
-  print content
+  #print content
   return 0
 
 def lambda_handler(event, context):
   # TODO implement
   #print "Received event: %s" % (json.dumps(event, indent=2))
-  print os.environ.get('SparkApiKey')
+  #print os.environ.get('SparkApiKey')
   emailText = getEmail(event)
   #print emailText
-  #parsedEmailText = parseEmail(emailText)
-  postToSpark()
+  parsedEmail = parseEmail(emailText)
+  print(parsedEmail)
+  
+  postToSpark(parsedEmail)
   #return "fuck"
+  return 0
