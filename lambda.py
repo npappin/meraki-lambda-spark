@@ -30,9 +30,18 @@ def parseEmail(rawEmail):
     if part.get_content_type() == 'text/plain':
       parsedEmail['Text'] = part.get_payload()
   needToLoop = True
-  while needToLoop == True:
-    print "run once"
-    needToLoop = False
+#  while needToLoop == True:
+#    print "run once"
+#    needToLoop = False
+  plainText = parsedEmail['Text']
+  plainText = plainText.splitlines()
+  plainText = plainText[2:]
+  plainText = plainText[:-6]
+  plainText.insert(0,parsedEmail['Subject'])
+  plainText = '/n'.join(map(str,plainText))
+  parsedEmail['Parsed'] = plainText
+#  for line in plainText:
+#    print(line)
   return parsedEmail
   
 def postToSpark(dictToPost):
@@ -41,7 +50,7 @@ def postToSpark(dictToPost):
   data = '''{
     "roomId" : "Y2lzY29zcGFyazovL3VzL1JPT00vNGVlMDYxYzAtMTMwZC0xMWU3LTk3NzYtODkyNDJkMDcxNjcx",
     "text" : "%s"
-    }''' % dictToPost['Subject']
+    }''' % dictToPost['Parsed']
   headers = {
     'authorization': "Bearer %s" % apiKey,
     'content-type': "application/json",
