@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os, json, boto3, urllib, urllib2
 import email
 
@@ -37,8 +39,8 @@ def parseEmail(rawEmail):
   plainText = plainText.splitlines()
   plainText = plainText[2:]
   plainText = plainText[:-6]
-  plainText.insert(0,parsedEmail['Subject'])
-  plainText = '/n'.join(map(str,plainText))
+  plainText.insert(0,"# %s" % parsedEmail['Subject'])
+  plainText = '\n\n'.join(map(str,plainText))
   parsedEmail['Parsed'] = plainText
 #  for line in plainText:
 #    print(line)
@@ -49,14 +51,16 @@ def postToSpark(dictToPost):
   url = "https://api.ciscospark.com/v1/messages"
   data = '''{
     "roomId" : "Y2lzY29zcGFyazovL3VzL1JPT00vNGVlMDYxYzAtMTMwZC0xMWU3LTk3NzYtODkyNDJkMDcxNjcx",
-    "text" : "%s"
-    }''' % dictToPost['Parsed']
+    "markdown" : "%s",
+    "text": "%s"
+    }''' % (str(dictToPost['Parsed']),str(dictToPost['Subject']))
+  print data
   headers = {
     'authorization': "Bearer %s" % apiKey,
     'content-type': "application/json",
     'cache-control': "no-cache",
   }
-  #print headers
+  print headers
   req = urllib2.Request(url,data,headers)
   content = urllib2.urlopen(req).read()
   #print content
@@ -69,8 +73,7 @@ def lambda_handler(event, context):
   emailText = getEmail(event)
   #print emailText
   parsedEmail = parseEmail(emailText)
-  print(parsedEmail)
-  
+  #print(parsedEmail)
   postToSpark(parsedEmail)
   #return "fuck"
   return 0
