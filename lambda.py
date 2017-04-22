@@ -38,9 +38,11 @@ def parseEmail(rawEmail):
   plainText = parsedEmail['Text']
   plainText = plainText.splitlines()
   plainText = plainText[2:]
-  plainText = plainText[:-6]
+  plainText.insert(0,"```")
+  plainText = plainText[:-8]
+  plainText.insert(len(plainText),"```")
   plainText.insert(0,"# %s" % parsedEmail['Subject'])
-  plainText = '\n\n'.join(map(str,plainText))
+  plainText = '\\n'.join(map(str,plainText))
   parsedEmail['Parsed'] = plainText
 #  for line in plainText:
 #    print(line)
@@ -49,11 +51,16 @@ def parseEmail(rawEmail):
 def postToSpark(dictToPost):
   apiKey = os.environ.get('SparkApiKey')
   url = "https://api.ciscospark.com/v1/messages"
+  print(type(str(dictToPost['Parsed'])))
+  print(type(dictToPost['Parsed']))
+  print(type(url))
   data = '''{
     "roomId" : "Y2lzY29zcGFyazovL3VzL1JPT00vNGVlMDYxYzAtMTMwZC0xMWU3LTk3NzYtODkyNDJkMDcxNjcx",
     "markdown" : "%s",
     "text": "%s"
-    }''' % (str(dictToPost['Parsed']),str(dictToPost['Subject']))
+    }''' % (dictToPost['Parsed'],dictToPost['Subject'])
+#    }''' % ("foo\\n","bar")
+#  print(data.replace(/\n/g, "\\\\n"))
   print data
   headers = {
     'authorization': "Bearer %s" % apiKey,
